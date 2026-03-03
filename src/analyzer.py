@@ -1,5 +1,6 @@
 import json
-from anthropic import Anthropic
+from google import genai
+from google.genai import types
 
 
 SYSTEM_PROMPT = """És um analista de inteligência estratégica. Analisa transcrições de entrevistas de CEOs e extrai informação estruturada.
@@ -33,21 +34,21 @@ Transcrição:
 
 
 def analyze_transcript(transcript: str, metadata: dict, api_key: str) -> dict | None:
-    client = Anthropic(api_key=api_key)
+    client = genai.Client(api_key=api_key)
 
-    message = client.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=2048,
-        system=SYSTEM_PROMPT,
-        messages=[
-            {"role": "user", "content": build_prompt(transcript, metadata)}
-        ],
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=build_prompt(transcript, metadata),
+        config=types.GenerateContentConfig(
+            system_instruction=SYSTEM_PROMPT,
+            max_output_tokens=2048,
+        ),
     )
 
     try:
-        response_text = message.content[0].text
+        response_text = response.text
         if response_text.startswith("```"):
             response_text = response_text.split("\n", 1)[1].rsplit("```", 1)[0]
         return json.loads(response_text)
-    except (json.JSONDecodeError, IndexError):
+    except (json.JSONDecodeError, IndexError, AttributeError):
         return None

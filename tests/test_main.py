@@ -5,7 +5,7 @@ from src.main import process_video, main
 
 def test_process_video_full_pipeline():
     mock_config = {
-        "anthropic_api_key": "test-key",
+        "gemini_api_key": "test-key",
         "notion_token": "test-token",
         "notion_parent_page_id": "page-id",
     }
@@ -33,7 +33,7 @@ def test_process_video_full_pipeline():
 
 def test_process_video_uses_whisper_fallback():
     mock_config = {
-        "anthropic_api_key": "test-key",
+        "gemini_api_key": "test-key",
         "notion_token": "test-token",
         "notion_parent_page_id": "page-id",
     }

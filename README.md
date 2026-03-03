@@ -1,11 +1,11 @@
 # CEO Video Transcriber
 
-A Python CLI tool that transcribes YouTube CEO interviews, analyzes them with Claude, and writes structured strategic insights to a Notion database.
+A Python CLI tool that transcribes YouTube CEO interviews, analyzes them with Google Gemini, and writes structured strategic insights to a Notion database.
 
 Given a YouTube video or playlist URL, it:
 
 1. Fetches the video transcript (captions first, local Whisper fallback)
-2. Sends the transcript to Claude for structured analysis
+2. Sends the transcript to Gemini for structured analysis
 3. Writes the results as a row in a Notion database
 
 The analysis extracts: CEO name, role, whether they use AI, innovation initiatives, digital strategy, technologies mentioned, key challenges, and a strategic summary — all in Portuguese.
@@ -34,7 +34,7 @@ Each processed video creates a row with these columns:
 ### Prerequisites
 
 - Python 3.11+
-- An [Anthropic API key](https://console.anthropic.com/)
+- A [Google Gemini API key](https://aistudio.google.com/apikey) (free, no credit card required)
 - A [Notion integration token](https://www.notion.so/my-integrations) with write access
 - A Notion page ID where the database will be created
 
@@ -70,10 +70,26 @@ cp .env.example .env
 Edit `.env` with your real keys:
 
 ```
-ANTHROPIC_API_KEY=sk-ant-...
+GEMINI_API_KEY=AIza...
 NOTION_TOKEN=ntn_...
 NOTION_PARENT_PAGE_ID=abc123def456...
 ```
+
+#### How to get the Gemini API key
+
+1. Go to [Google AI Studio](https://aistudio.google.com/apikey)
+2. Sign in with your Google account
+3. Click "Create API key"
+4. Copy the key into your `.env` as `GEMINI_API_KEY`
+
+The free tier allows 15 requests/minute and 1,000 requests/day — more than enough for this tool.
+
+#### How to get the Notion integration token
+
+1. Go to [notion.so/my-integrations](https://www.notion.so/my-integrations)
+2. Click "New integration"
+3. Give it a name (e.g. "CEO Transcriber") and select your workspace
+4. Copy the "Internal Integration Secret" into your `.env` as `NOTION_TOKEN`
 
 #### How to get the Notion parent page ID
 
@@ -81,8 +97,7 @@ NOTION_PARENT_PAGE_ID=abc123def456...
 2. Click "Share" and "Copy link"
 3. The URL looks like: `https://www.notion.so/Your-Page-Title-abc123def456...`
 4. The ID is the last 32-character hex string (add dashes if needed: `abc123de-f456-...`)
-
-Make sure your Notion integration has access to this page (Share > Invite integration).
+5. **Important:** Share the page with your integration (Share > Invite > select your integration)
 
 ## Usage
 
@@ -129,7 +144,7 @@ src/
   config.py            # Loads and validates env vars
   youtube.py           # URL parsing, transcript fetching, metadata, playlists
   whisper_fallback.py  # Audio download + Whisper transcription (optional)
-  analyzer.py          # Claude API call for structured extraction
+  analyzer.py          # Gemini API call for structured extraction
   notion_db.py         # Notion database creation and row insertion
   main.py              # CLI entry point and pipeline orchestration
 tests/

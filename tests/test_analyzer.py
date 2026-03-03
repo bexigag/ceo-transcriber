@@ -16,8 +16,7 @@ def test_build_prompt_includes_transcript_and_metadata():
 
 def test_analyze_transcript_returns_structured_data():
     mock_response = MagicMock()
-    mock_response.content = [MagicMock()]
-    mock_response.content[0].text = json.dumps({
+    mock_response.text = json.dumps({
         "nome": "John Smith",
         "cargo": "CEO of TechCorp",
         "usa_ia": "Sim - utiliza IA para automação de processos internos",
@@ -29,10 +28,10 @@ def test_analyze_transcript_returns_structured_data():
         "resumo_estrategico": "TechCorp aposta forte em IA generativa..."
     })
 
-    with patch("src.analyzer.Anthropic") as mock_client_class:
+    with patch("src.analyzer.genai") as mock_genai:
         mock_client = MagicMock()
-        mock_client.messages.create.return_value = mock_response
-        mock_client_class.return_value = mock_client
+        mock_client.models.generate_content.return_value = mock_response
+        mock_genai.Client.return_value = mock_client
 
         result = analyze_transcript(
             transcript="The CEO said AI is transforming...",
@@ -48,13 +47,12 @@ def test_analyze_transcript_returns_structured_data():
 
 def test_analyze_transcript_handles_invalid_json():
     mock_response = MagicMock()
-    mock_response.content = [MagicMock()]
-    mock_response.content[0].text = "This is not JSON"
+    mock_response.text = "This is not JSON"
 
-    with patch("src.analyzer.Anthropic") as mock_client_class:
+    with patch("src.analyzer.genai") as mock_genai:
         mock_client = MagicMock()
-        mock_client.messages.create.return_value = mock_response
-        mock_client_class.return_value = mock_client
+        mock_client.models.generate_content.return_value = mock_response
+        mock_genai.Client.return_value = mock_client
 
         result = analyze_transcript(
             transcript="text",

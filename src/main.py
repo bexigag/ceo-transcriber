@@ -34,16 +34,16 @@ def process_video(video_id: str, database_id: str, config: dict) -> str:
             status="Erro",
         )
 
-    print(f"  Transcript: {len(transcript)} characters. Analyzing with Claude...")
+    print(f"  Transcript: {len(transcript)} characters. Analyzing with Gemini...")
 
     analysis = analyze_transcript(
         transcript=transcript,
         metadata=metadata,
-        api_key=config["anthropic_api_key"],
+        api_key=config["gemini_api_key"],
     )
 
     if analysis is None:
-        print(f"  ERROR: Claude analysis failed for {video_id}")
+        print(f"  ERROR: Gemini analysis failed for {video_id}")
         return add_row(
             token=config["notion_token"],
             database_id=database_id,
