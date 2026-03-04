@@ -8,22 +8,29 @@ from src.notion_db import add_row
 
 
 def get_transcript_supadata(video_id: str, api_key: str) -> str | None:
-    """Fallback transcript fetcher using Supadata API."""
-    try:
-        resp = requests.get(
-            "https://api.supadata.ai/v1/youtube/transcript",
-            params={"url": f"https://www.youtube.com/watch?v={video_id}", "lang": "pt"},
-            headers={"x-api-key": api_key},
-            timeout=30,
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        content = data.get("content", [])
-        if isinstance(content, list):
-            return " ".join(item.get("text", "") for item in content)
-        return None
-    except Exception:
-        return None
+    """Fallback transcript fetcher using Supadata API. Tries pt, then en, then any language."""
+    url = f"https://www.youtube.com/watch?v={video_id}"
+    for lang in ["pt", "en", None]:
+        try:
+            params = {"url": url}
+            if lang:
+                params["lang"] = lang
+            resp = requests.get(
+                "https://api.supadata.ai/v1/youtube/transcript",
+                params=params,
+                headers={"x-api-key": api_key},
+                timeout=30,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            content = data.get("content", [])
+            if isinstance(content, list) and content:
+                text = " ".join(item.get("text", "") for item in content)
+                if text.strip():
+                    return text
+        except Exception:
+            continue
+    return None
 
 st.set_page_config(page_title="CEO Video Transcriber", page_icon="🎥", layout="centered")
 
