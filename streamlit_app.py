@@ -87,11 +87,18 @@ def process_single_video(video_id: str, gemini_key: str, notion_token: str, data
         st.write(f"Transcricao: {len(transcript)} caracteres")
 
         st.write("A analisar com Gemini...")
-        try:
-            analysis = analyze_transcript(transcript, metadata, gemini_key)
-        except Exception as e:
-            st.warning(f"Erro do Gemini: {e}")
-            analysis = None
+        gemini_keys = [k.strip() for k in gemini_key.split(",") if k.strip()]
+        analysis = None
+        for i, key in enumerate(gemini_keys):
+            try:
+                analysis = analyze_transcript(transcript, metadata, key)
+                if analysis:
+                    break
+            except Exception as e:
+                if i < len(gemini_keys) - 1:
+                    st.warning(f"Gemini key {i + 1} falhou, a tentar a seguinte...")
+                else:
+                    st.warning(f"Erro do Gemini: {e}")
         if analysis is None:
             st.error("A analise do Gemini falhou.")
             page_id = add_row(
