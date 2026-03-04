@@ -1,8 +1,28 @@
+import requests
 import streamlit as st
 
 from src.youtube import parse_youtube_url, extract_video_id, get_transcript, get_video_metadata, get_playlist_video_ids
 from src.analyzer import analyze_transcript
 from src.notion_db import add_row
+
+
+def get_transcript_supadata(video_id: str, api_key: str) -> str | None:
+    """Fallback transcript fetcher using Supadata API."""
+    try:
+        resp = requests.get(
+            "https://api.supadata.ai/v1/youtube/transcript",
+            params={"url": f"https://www.youtube.com/watch?v={video_id}", "lang": "pt"},
+            headers={"x-api-key": api_key},
+            timeout=30,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        content = data.get("content", [])
+        if isinstance(content, list):
+            return " ".join(item.get("text", "") for item in content)
+        return None
+    except Exception:
+        return None
 
 st.set_page_config(page_title="CEO Video Transcriber", page_icon="🎥", layout="centered")
 
@@ -40,6 +60,11 @@ def process_single_video(video_id: str, gemini_key: str, notion_token: str, data
 
         st.write("A obter transcricao...")
         transcript = get_transcript(video_id)
+        if transcript is None:
+            supadata_key = st.secrets.get("SUPADATA_API_KEY")
+            if supadata_key:
+                st.write("A tentar via Supadata...")
+                transcript = get_transcript_supadata(video_id, supadata_key)
         if transcript is None:
             st.error("Nao foi possivel obter a transcricao. O video pode nao ter legendas.")
             page_id = add_row(
