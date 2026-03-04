@@ -80,7 +80,11 @@ def process_single_video(video_id: str, gemini_key: str, notion_token: str, data
         st.write(f"Transcricao: {len(transcript)} caracteres")
 
         st.write("A analisar com Gemini...")
-        analysis = analyze_transcript(transcript, metadata, gemini_key)
+        try:
+            analysis = analyze_transcript(transcript, metadata, gemini_key)
+        except Exception as e:
+            st.warning(f"Erro do Gemini: {e}")
+            analysis = None
         if analysis is None:
             st.error("A analise do Gemini falhou.")
             page_id = add_row(
@@ -110,7 +114,7 @@ def process_single_video(video_id: str, gemini_key: str, notion_token: str, data
     return True, analysis, page_id
 
 
-GEMINI_WAIT_SECONDS = 15  # 5 RPM limit = 1 request per 12s, using 15s for safety
+GEMINI_WAIT_SECONDS = 20  # 5 RPM limit = 1 request per 12s, using 20s for safety
 GEMINI_DAILY_LIMIT = 20
 
 
