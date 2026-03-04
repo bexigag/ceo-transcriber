@@ -83,8 +83,9 @@ def add_row(
 
         techs = analysis.get("tecnologias_mencionadas", [])
         if isinstance(techs, list):
+            # Notion multi-select doesn't allow commas in option names
             properties["Tecnologias Mencionadas"] = {
-                "multi_select": [{"name": t} for t in techs]
+                "multi_select": [{"name": t.replace(",", " e")[:100]} for t in techs if isinstance(t, str)]
             }
     else:
         properties["Nome"] = {

@@ -94,12 +94,17 @@ def process_single_video(video_id: str, gemini_key: str, notion_token: str, data
             return False, None, page_id
 
         st.write("A escrever no Notion...")
-        page_id = add_row(
-            token=notion_token,
-            database_id=database_id,
-            video_url=metadata["url"],
-            analysis=analysis,
-        )
+        try:
+            page_id = add_row(
+                token=notion_token,
+                database_id=database_id,
+                video_url=metadata["url"],
+                analysis=analysis,
+            )
+        except Exception as e:
+            st.error(f"Erro ao escrever no Notion: {e}")
+            status.update(label="Erro no Notion", state="error")
+            return False, None, None
         status.update(label="Concluido!", state="complete")
 
     return True, analysis, page_id
