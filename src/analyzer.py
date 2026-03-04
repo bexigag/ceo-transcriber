@@ -10,8 +10,8 @@ Responde APENAS com um objeto JSON válido, sem texto adicional. O JSON deve ter
 {
   "nome": "Nome completo do CEO/entrevistado",
   "cargo": "Cargo e empresa",
-  "usa_ia": "Sim/Não - breve explicação de como usa IA atualmente",
-  "vai_usar_ia": "Sim/Não - breve explicação da intenção futura",
+  "usa_ia": "Sim/Não - explicação detalhada: em que áreas usa IA, que ferramentas ou soluções específicas, para que processos, e que resultados obteve",
+  "vai_usar_ia": "Sim/Não - explicação detalhada: em que áreas pretende usar IA, que planos concretos tem, que investimentos ou parcerias prevê, e qual o horizonte temporal",
   "inovacao": "Inovações em curso mencionadas",
   "estrategia_digital": "Insights sobre estratégia digital",
   "tecnologias_mencionadas": ["lista", "de", "tecnologias"],
