@@ -166,6 +166,83 @@ def process_single_video(video_id: str, gemini_key: str, notion_token: str, data
     return True, analysis, page_id
 
 
+def process_single_episode(episode: dict, gemini_key: str, notion_token: str, database_id: str):
+    """Process one podcast episode. Returns (success: bool, analysis: dict | None, page_id: str | None)."""
+    from src.podcast import get_episode_metadata
+
+    with st.status("A processar o episodio...", expanded=True) as status:
+        metadata = get_episode_metadata(episode)
+        st.write(f"**{metadata['title']}**")
+
+        if not episode.get("audio_url"):
+            st.error("Episodio sem URL de audio.")
+            status.update(label="Sem audio", state="error")
+            return False, None, None
+
+        st.write("A transcrever via Supadata...")
+        supadata_key = st.secrets.get("SUPADATA_API_KEY")
+        if not supadata_key:
+            st.error("SUPADATA_API_KEY nao configurada.")
+            status.update(label="Sem chave Supadata", state="error")
+            return False, None, None
+
+        transcript = get_transcript_supadata_file(episode["audio_url"], supadata_key)
+        if transcript is None:
+            st.error("Nao foi possivel transcrever o episodio.")
+            page_id = add_row(
+                token=notion_token,
+                database_id=database_id,
+                video_url=metadata["url"],
+                analysis=None,
+                status="Erro",
+            )
+            status.update(label="Erro na transcricao", state="error")
+            return False, None, page_id
+        st.write(f"Transcricao: {len(transcript)} caracteres")
+
+        st.write("A analisar com Gemini...")
+        gemini_keys = [k.strip() for k in gemini_key.split(",") if k.strip()]
+        gemini_keys.reverse()
+        analysis = None
+        for i, key in enumerate(gemini_keys):
+            try:
+                analysis = analyze_transcript(transcript, metadata, key)
+                if analysis:
+                    break
+            except Exception as e:
+                if i < len(gemini_keys) - 1:
+                    st.warning(f"Gemini key {i + 1} falhou, a tentar a seguinte...")
+                else:
+                    st.warning(f"Erro do Gemini: {e}")
+        if analysis is None:
+            st.error("A analise do Gemini falhou.")
+            page_id = add_row(
+                token=notion_token,
+                database_id=database_id,
+                video_url=metadata["url"],
+                analysis=None,
+                status="Erro",
+            )
+            status.update(label="Erro na analise", state="error")
+            return False, None, page_id
+
+        st.write("A escrever no Notion...")
+        try:
+            page_id = add_row(
+                token=notion_token,
+                database_id=database_id,
+                video_url=metadata["url"],
+                analysis=analysis,
+            )
+        except Exception as e:
+            st.error(f"Erro ao escrever no Notion: {e}")
+            status.update(label="Erro no Notion", state="error")
+            return False, None, None
+        status.update(label="Concluido!", state="complete")
+
+    return True, analysis, page_id
+
+
 GEMINI_WAIT_SECONDS = 20  # 5 RPM limit = 1 request per 12s, using 20s for safety
 GEMINI_DAILY_LIMIT = 20
 
