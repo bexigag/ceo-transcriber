@@ -77,8 +77,9 @@ def test_get_transcript_supadata_file_success():
     mock_resp.json.return_value = {"content": "transcribed text here", "lang": "pt"}
 
     with patch("streamlit_app.requests.get", return_value=mock_resp):
-        result = get_transcript_supadata_file("https://example.com/ep.mp3", "fake-key")
-        assert result == "transcribed text here"
+        transcript, error = get_transcript_supadata_file("https://example.com/ep.mp3", "fake-key")
+        assert transcript == "transcribed text here"
+        assert error is None
 
 
 def test_get_transcript_supadata_file_async_job():
@@ -94,8 +95,9 @@ def test_get_transcript_supadata_file_async_job():
 
     with patch("streamlit_app.requests.get", side_effect=[mock_resp_202, mock_resp_200]):
         with patch("streamlit_app.time.sleep"):
-            result = get_transcript_supadata_file("https://example.com/ep.mp3", "fake-key")
-            assert result == "async result"
+            transcript, error = get_transcript_supadata_file("https://example.com/ep.mp3", "fake-key")
+            assert transcript == "async result"
+            assert error is None
 
 
 def test_get_transcript_supadata_file_empty_returns_none():
@@ -104,7 +106,9 @@ def test_get_transcript_supadata_file_empty_returns_none():
     mock_resp = MagicMock()
     mock_resp.status_code = 200
     mock_resp.json.return_value = {"content": "   ", "lang": "pt"}
+    mock_resp.text = '{"content": "   "}'
 
     with patch("streamlit_app.requests.get", return_value=mock_resp):
-        result = get_transcript_supadata_file("https://example.com/ep.mp3", "fake-key")
-        assert result is None
+        transcript, error = get_transcript_supadata_file("https://example.com/ep.mp3", "fake-key")
+        assert transcript is None
+        assert error is not None

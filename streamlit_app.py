@@ -33,26 +33,28 @@ def get_transcript_supadata(video_id: str, api_key: str) -> str | None:
     return None
 
 
-def get_transcript_supadata_file(audio_url: str, api_key: str, max_polls: int = 30) -> str | None:
-    """Transcribe an audio file URL using Supadata API. Handles async jobs for large files."""
+def get_transcript_supadata_file(audio_url: str, api_key: str, max_polls: int = 30) -> tuple[str | None, str | None]:
+    """Transcribe an audio file URL using Supadata API. Returns (transcript, error_detail)."""
     try:
         resp = requests.get(
             "https://api.supadata.ai/v1/transcript",
             params={"url": audio_url, "text": "true"},
             headers={"x-api-key": api_key},
-            timeout=60,
+            timeout=120,
         )
 
         if resp.status_code == 200:
             data = resp.json()
             content = data.get("content", "")
-            return content if content.strip() else None
+            if content.strip():
+                return content, None
+            return None, f"Supadata devolveu conteudo vazio. Resposta: {resp.text[:300]}"
 
         if resp.status_code == 202:
             job_id = resp.json().get("jobId")
             if not job_id:
-                return None
-            for _ in range(max_polls):
+                return None, "Supadata devolveu 202 mas sem jobId"
+            for poll_num in range(max_polls):
                 time.sleep(10)
                 poll_resp = requests.get(
                     f"https://api.supadata.ai/v1/transcript/{job_id}",
@@ -62,14 +64,14 @@ def get_transcript_supadata_file(audio_url: str, api_key: str, max_polls: int = 
                 if poll_resp.status_code == 200:
                     data = poll_resp.json()
                     content = data.get("content", "")
-                    return content if content.strip() else None
-            return None
+                    if content.strip():
+                        return content, None
+                    return None, f"Job concluido mas conteudo vazio"
+            return None, f"Timeout: job {job_id} nao completou apos {max_polls} tentativas"
 
-        st.warning(f"Supadata respondeu com status {resp.status_code}: {resp.text[:200]}")
-        return None
+        return None, f"Status {resp.status_code}: {resp.text[:300]}"
     except Exception as e:
-        st.warning(f"Erro ao chamar Supadata: {e}")
-        return None
+        return None, f"Excepcao: {e}"
 
 st.set_page_config(page_title="CEO Video Transcriber", page_icon="🎥", layout="centered")
 
@@ -188,9 +190,9 @@ def process_single_episode(episode: dict, gemini_key: str, notion_token: str, da
             status.update(label="Sem chave Supadata", state="error")
             return False, None, None
 
-        transcript = get_transcript_supadata_file(episode["audio_url"], supadata_key)
+        transcript, error_detail = get_transcript_supadata_file(episode["audio_url"], supadata_key)
         if transcript is None:
-            st.error("Nao foi possivel transcrever o episodio.")
+            st.error(f"Nao foi possivel transcrever o episodio. {error_detail or ''}")
             page_id = add_row(
                 token=notion_token,
                 database_id=database_id,
