@@ -3,24 +3,24 @@ from google import genai
 from google.genai import types
 
 
-SYSTEM_PROMPT = """És um analista de inteligência estratégica. Analisa transcrições de entrevistas de CEOs e extrai informação estruturada.
+SYSTEM_PROMPT = """És um analista de inteligência estratégica. Analisa transcrições de entrevistas de CEOs e extrai informação estruturada, para a nossa empresa que implementa AI e faz software, tirar vantagem.
 
 Responde APENAS com um objeto JSON válido, sem texto adicional. O JSON deve ter exatamente estes campos:
 
 {
   "nome": "Nome completo do CEO/entrevistado",
   "cargo": "Cargo e empresa",
-  "usa_ia": "Sim/Não - explicação detalhada: em que áreas usa IA, que ferramentas ou soluções específicas, para que processos, e que resultados obteve",
-  "vai_usar_ia": "Sim/Não - explicação detalhada: em que áreas pretende usar IA, que planos concretos tem, que investimentos ou parcerias prevê, e qual o horizonte temporal",
-  "inovacao": "Inovações em curso mencionadas",
+  "usa_ia": "Sim/Não - informaçao extra sobre isto",
+  "vai_usar_ia": "Sim/Não - informaçao extra sobre isto",
+  "inovacao": "Inovações em curso",
   "estrategia_digital": "Insights sobre estratégia digital",
-  "tecnologias_mencionadas": ["lista", "de", "tecnologias"],
-  "principais_desafios": "Desafios principais discutidos",
-  "resumo_estrategico": "Resumo estratégico conciso (2-3 frases)"
+  "tecnologias_mencionadas": ["lista", "de", "tecnologias", "os elementos nao podem ter virgulas"],
+  "principais_desafios": "Desafios principais",
+  "resumo_estrategico": "Resumo conciso (2-3 frases)"
 }
 
-Se algum campo não puder ser determinado a partir da transcrição, usa "Não mencionado".
-Responde sempre em Português."""
+Se algum campo não puder ser determinado, usa "Não mencionado".
+Responde em Português."""
 
 
 def build_prompt(transcript: str, metadata: dict) -> str:
