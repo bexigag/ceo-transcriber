@@ -32,6 +32,43 @@ def get_transcript_supadata(video_id: str, api_key: str) -> str | None:
             continue
     return None
 
+
+def get_transcript_supadata_file(audio_url: str, api_key: str, max_polls: int = 30) -> str | None:
+    """Transcribe an audio file URL using Supadata API. Handles async jobs for large files."""
+    try:
+        resp = requests.get(
+            "https://api.supadata.ai/v1/transcript",
+            params={"url": audio_url, "text": "true"},
+            headers={"x-api-key": api_key},
+            timeout=60,
+        )
+
+        if resp.status_code == 200:
+            data = resp.json()
+            content = data.get("content", "")
+            return content if content.strip() else None
+
+        if resp.status_code == 202:
+            job_id = resp.json().get("jobId")
+            if not job_id:
+                return None
+            for _ in range(max_polls):
+                time.sleep(10)
+                poll_resp = requests.get(
+                    f"https://api.supadata.ai/v1/transcript/{job_id}",
+                    headers={"x-api-key": api_key},
+                    timeout=30,
+                )
+                if poll_resp.status_code == 200:
+                    data = poll_resp.json()
+                    content = data.get("content", "")
+                    return content if content.strip() else None
+            return None
+
+        return None
+    except Exception:
+        return None
+
 st.set_page_config(page_title="CEO Video Transcriber", page_icon="🎥", layout="centered")
 
 
