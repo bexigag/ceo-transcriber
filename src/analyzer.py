@@ -64,6 +64,32 @@ Transcrição:
 {transcript}"""
 
 
+def _is_person_valid(person: dict) -> bool:
+    """Validate that a person entry meets minimum quality standards."""
+    # Nome não pode ser "Não mencionado" ou vazio
+    nome = person.get("nome", "").strip()
+    nome_lower = nome.lower()
+    if nome_lower in ["não mencionado", "nao mencionado", ""] or len(nome) < 2:
+        return False
+
+    # Cargo e Empresa devem ter mais de 2 caracteres
+    if len(person.get("cargo", "").strip()) <= 2:
+        return False
+    if len(person.get("empresa", "").strip()) <= 2:
+        return False
+
+    # Campos obrigatórios a verificar (excluindo tecnologias e pessoas_departamento_ai que são opcionais)
+    required_fields = ["nome", "cargo", "empresa", "usa_ia", "vai_usar_ia", "visao_estrategica", "principais_desafios"]
+    nao_mentionados = 0
+    for k in required_fields:
+        v = person.get(k, "")
+        if isinstance(v, str) and v.strip().lower() in ["não mencionado", "nao mencionado", ""]:
+            nao_mentionados += 1
+
+    # Máximo 3 campos obrigatórios vazios
+    return nao_mentionados <= 3
+
+
 def analyze_transcript(transcript: str, metadata: dict, api_key: str) -> list[dict] | None:
     client = genai.Client(api_key=api_key)
 
@@ -93,7 +119,10 @@ def analyze_transcript(transcript: str, metadata: dict, api_key: str) -> list[di
         if not isinstance(parsed, list):
             return None
 
+        # Filter out invalid persons (quality control)
+        valid_persons = [p for p in parsed if _is_person_valid(p)]
+
         # Cap at 5 persons maximum
-        return parsed[:5]
+        return valid_persons[:5]
     except (json.JSONDecodeError, IndexError, AttributeError):
         return None
