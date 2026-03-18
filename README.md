@@ -12,22 +12,60 @@ The analysis extracts: CEO name, role, whether they use AI, innovation initiativ
 
 ## Notion Database Schema
 
-Each processed video creates a row with these columns:
+Each processed person creates a row with these columns:
 
 | Column | Type | Description |
 |---|---|---|
-| Nome | Title | CEO / interviewee name |
-| Cargo | Text | Role and company |
+| Nome | Title | Person name |
+| Cargo | Text | Role/title (e.g., "CEO", "CTO") |
+| Nome da Empresa | Text | Company name (separated from role) |
 | Link da Entrevista | URL | YouTube video link |
+| Data | Date | Video upload date |
 | Usa IA | Text | Whether they currently use AI |
 | Vai Usar IA | Text | Future AI plans |
-| Inovação | Text | Innovation initiatives mentioned |
-| Estratégia Digital | Text | Digital strategy insights |
+| Tem Departamento AI | Text | Whether they have an AI department |
+| Pessoas Departamento AI | Text | Names of AI department/team members |
+| Visão Estratégica | Text | Strategic vision and innovation (combined) |
 | Tecnologias Mencionadas | Multi-select | Technologies referenced |
 | Principais Desafios | Text | Key challenges discussed |
-| Resumo Estratégico | Text | 2-3 sentence strategic summary |
+| Outreach | Text | Bullet points for sales outreach |
+| Potencial Cliente | Text | Lead score (N/10) with justification |
 | Apontamentos | Text | Free-form notes |
 | Status | Select | A Processar / Concluído / Erro |
+
+### Notion Database Setup
+
+Before running the app, ensure your Notion database has these columns:
+
+#### Required Columns (create manually if using existing database):
+
+1. **Nome** (title)
+2. **Cargo** (rich_text)
+3. **Nome da Empresa** (rich_text) - NEW
+4. **Usa IA** (rich_text)
+5. **Vai Usar IA** (rich_text)
+6. **Tem Departamento AI** (rich_text) - NEW
+7. **Pessoas Departamento AI** (rich_text) - NEW
+8. **Visão Estratégica** (rich_text) - NEW (replaces Estratégia Digital, Inovação, Resumo Estratégico)
+9. **Tecnologias Mencionadas** (multi_select)
+10. **Principais Desafios** (rich_text)
+11. **Outreach** (rich_text) - NEW
+12. **Potencial Cliente** (rich_text)
+13. **Link da Entrevista** (url)
+14. **Data** (date)
+15. **Status** (select: A Processar, Concluído, Erro)
+16. **Apontamentos** (rich_text)
+
+#### Optional: Remove Old Columns
+
+If migrating from an older version, you may remove:
+- Estratégia Digital
+- Inovação
+- Resumo Estratégico
+
+#### Note
+
+New databases created via `create_database()` will have the correct schema automatically. For existing databases, create the new columns manually in Notion.
 
 ## Setup
 
@@ -101,7 +139,9 @@ The free tier allows 15 requests/minute and 1,000 requests/day — more than eno
 
 ## Usage
 
-### Process a single video
+### CLI
+
+Process a single video
 
 ```bash
 python -m src.main "https://www.youtube.com/watch?v=VIDEO_ID"
@@ -129,13 +169,47 @@ python -m src.main "https://www.youtube.com/playlist?list=PLxxxxxx" --db-id abc1
 
 This iterates through every video in the playlist and creates one Notion row per video.
 
+### Web Interface (Streamlit)
+
+The project also includes a web interface for easier use:
+
+```bash
+streamlit run streamlit_app.py
+```
+
+The Streamlit app supports:
+- **YouTube videos** - Single videos or playlists
+- **"O CEO e o Limite" podcast** - Automatic episode loading from Expresso
+- **Password protection** - Configure via `APP_PASSWORD` in `.env` or Streamlit secrets
+- **Real-time progress** - See processing status for each video/episode
+- **Batch processing** - Process multiple videos/episodes in sequence
+
+#### Streamlit Configuration
+
+Add these to your `.env` or Streamlit secrets:
+
+```
+APP_PASSWORD=your-password-here
+GEMINI_API_KEY=AIza...
+NOTION_TOKEN=ntn_...
+NOTION_DATABASE_ID=abc123...
+SUPADATA_API_KEY=optional-for-fallback-transcript
+```
+
+#### Running on Streamlit Cloud
+
+1. Fork this repository
+2. Connect to Streamlit Cloud
+3. Add secrets in the deployment settings
+4. Deploy!
+
 ## Running Tests
 
 ```bash
 python -m pytest tests/ -v
 ```
 
-All 24 tests use mocks and require no API keys or network access.
+All 30 tests use mocks and require no API keys or network access.
 
 ## Project Structure
 
@@ -143,13 +217,16 @@ All 24 tests use mocks and require no API keys or network access.
 src/
   config.py            # Loads and validates env vars
   youtube.py           # URL parsing, transcript fetching, metadata, playlists
+  podcast.py           # "O CEO e o Limite" podcast episode fetching
   whisper_fallback.py  # Audio download + Whisper transcription (optional)
   analyzer.py          # Gemini API call for structured extraction
   notion_db.py         # Notion database creation and row insertion
   main.py              # CLI entry point and pipeline orchestration
+streamlit_app.py       # Web interface for processing videos/podcasts
 tests/
   test_config.py
   test_youtube.py
+  test_podcast.py
   test_whisper_fallback.py
   test_analyzer.py
   test_notion_db.py

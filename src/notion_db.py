@@ -96,13 +96,15 @@ def add_row(
             "title": [{"type": "text", "text": {"content": analysis.get("nome", "Desconhecido")}}]
         }
         properties["Cargo"] = _rich_text(analysis.get("cargo", ""))
+        properties["Nome da Empresa"] = _rich_text(analysis.get("empresa") or "Não mencionado")
         properties["Usa IA"] = _rich_text(analysis.get("usa_ia", ""))
         properties["Vai Usar IA"] = _rich_text(analysis.get("vai_usar_ia", ""))
-        properties["Inovação"] = _rich_text(analysis.get("inovacao", ""))
-        properties["Estratégia Digital"] = _rich_text(analysis.get("estrategia_digital", ""))
+        properties["Visão Estratégica"] = _rich_text(analysis.get("visao_estrategica") or "Não mencionado")
         properties["Principais Desafios"] = _rich_text(analysis.get("principais_desafios", ""))
-        properties["Resumo Estratégico"] = _rich_text(analysis.get("resumo_estrategico", ""))
         properties["Potencial Cliente"] = _rich_text(analysis.get("potencial_cliente", ""))
+        properties["Tem Departamento AI"] = _rich_text(analysis.get("departamento_ai") or "Não mencionado")
+        properties["Pessoas Departamento AI"] = _rich_text(analysis.get("pessoas_departamento_ai") or "")
+        properties["Outreach"] = _rich_text(analysis.get("outreach") or "")
 
         techs = analysis.get("tecnologias_mencionadas", [])
         if isinstance(techs, list):
